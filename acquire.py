@@ -38,16 +38,14 @@ print(f'alone: {titanic.alone.unique()}')
 print(f'class: {titanic.pclass.unique()}')
 
 
+#caching overwrites existing file
 titanic.to_csv("titanic.csv")
 
 def get_iris_data():
 	query = """SELECT * FROM measurements JOIN species USING(species_id)"""
 	return pd.read_sql(query, get_connection('iris_db'))
 
-#same result
 df_iris = get_iris_data()
 df_iris.to_csv("iris.csv")
-
-
 
 
