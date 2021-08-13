@@ -1,0 +1,31 @@
+Section 1 - iris_db: Using iris data from our mySQL server and the methods used in the lesson above:
+
+    Acquire, prepare & split your data.
+
+    Univariate Stats
+
+        For each measurement type (quantitative variable): create a histogram, boxplot, & compute descriptive statistics (using .describe()).
+
+        For each species (categorical variable): create a frequency table and a bar plot of those frequencies.
+
+        Document takeaways & any actions.
+
+    Bivariate Stats
+
+        Visualize each measurement type (y-axis) with the species variable (x-axis) using barplots, adding a horizontal line showing the overall mean of the metric (y-axis).
+
+        For each measurement type, compute the descriptive statistics for each species.
+
+        For virginica & versicolor: Compare the mean petal_width using the Mann-Whitney test (scipy.stats.mannwhitneyu) to see if there is a significant difference between the two groups. Do the same for the other measurement types.
+
+        Document takeaways & any actions.
+
+    Multivariate Stats
+
+        Visualize the interaction of each measurement type with the others using a pairplot (or scatter matrix or something similar) and add color to represent species.
+
+        Create a swarmplot using a melted dataframe of all your numeric variables. The x-axis should be the variable name, the y-axis the measure. Add another dimension using color to represent species. Document takeaways from this visualization.
+
+        Ask a specific question of the data, such as: is the sepal area signficantly different in virginica compared to setosa? Answer the question through both a plot and using a mann-whitney or t-test. If you use a t-test, be sure assumptions are met (independence, normality, equal variance).
+
+        Document takeaways and any actions.
