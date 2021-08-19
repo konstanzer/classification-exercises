@@ -4,6 +4,8 @@ env.py
 __pycache__
 titanic.csv
 iris.csv
+c3.csv
+paws.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
