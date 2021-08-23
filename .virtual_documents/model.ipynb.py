@@ -172,13 +172,17 @@ plot_roc_curve(rf2, X_dev, y_dev); #AUC = .88
 
 
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 
 #not the most promising
 scores_out, scores_in = [], []
-k_values = range(1,50)
+k_values = range(1,41)
 for k in k_values:
-    knn = KNeighborsClassifier(n_neighbors=k)
+    #don't forget to scale!
+    knn = make_pipeline(StandardScaler(),
+                        KNeighborsClassifier(n_neighbors=k))
     knn.fit(X_train, y_train)
     scores_out.append(round(knn.score(X_dev, y_dev),3))
     scores_in.append(round(knn.score(X_train, y_train),3))    
@@ -188,12 +192,14 @@ f = plt.subplots(figsize=(16,4))
 plt.plot(k_values, scores_in)
 plt.plot(k_values, scores_out)
 plt.grid()
+plt.xlim(1,40)
 plt.legend(["train","dev"])
 plt.title("kNN accuracy on train & dev sets for different values k");
 
 
 #almost all errors on survived class, low recall
-knn = KNeighborsClassifier(n_neighbors=k_values[np.argmax(scores)])
+knn = make_pipeline(StandardScaler(),
+                    KNeighborsClassifier(n_neighbors=k_values[np.argmax(scores_out)]))
 knn.fit(X_train, y_train)
 plot_confusion_matrix(knn, X_dev, y_dev, cmap='copper_r');
 
@@ -206,9 +212,12 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import Ridge
+import eli5
 
 
 #the CV version does some automatic tuning
+#in theory the beta can control for different feature scales, here scaling is necessary for convergence
 lr = make_pipeline(StandardScaler(), LogisticRegressionCV(random_state=36))
 lr.fit(X_train, y_train)
 lr.score(X_dev, y_dev)
@@ -246,22 +255,40 @@ plot_roc_curve(lr, X_dev, y_dev); #AUC = .86
 X_train.columns
 
 
-vars=['class_Third','age', 'fare']
-small_train, small_dev = X_train[vars], X_dev[vars]
-
-
+features=['class_Third','age', 'fare']
+small_train, small_dev = X_train[features], X_dev[features]
 #predicitng with 3 features is better than baseline
 lr2 = LogisticRegression(random_state=36)
 lr2.fit(small_train, y_train)
 lr2.score(small_dev, y_dev)
 
 
-vars=['class_Third','age', 'fare', 'sex_male']
-small_train, small_dev = X_train[vars], X_dev[vars]
-
-
-#predicitng with 4 features is much better than baseline
+features=['class_Third','age', 'fare', 'sex_male']
+small_train, small_dev = X_train[features], X_dev[features]
+#predicting with 4 features is much better than baseline
 lr2 = LogisticRegression(random_state=36)
+lr2.fit(small_train, y_train)
+lr2.score(small_dev, y_dev)
+
+
+#best
+features=['class_Third', 'age', 'sex_male', 'sibsp']
+small_train, small_dev = X_train[features], X_dev[features]
+#predicting with 4 features is much better than baseline
+lr2 = LogisticRegression(random_state=36)
+lr2.fit(small_train, y_train)
+lr2.score(small_dev, y_dev)
+
+
+lr2.coef_, lr2.intercept_
+
+
+features=['sex_male', 'class_Third', 'sibsp',
+          'age', 'class_Second', 'alone',
+          'parch', 'fare']
+small_train, small_dev = X_train[features], X_dev[features]
+#predicting with 4 features is much better than baseline
+lr2 = make_pipeline(StandardScaler(), LogisticRegressionCV(random_state=36))
 lr2.fit(small_train, y_train)
 lr2.score(small_dev, y_dev)
 
