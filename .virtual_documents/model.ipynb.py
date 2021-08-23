@@ -10,6 +10,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import plot_roc_curve
 
 from imblearn.over_sampling import RandomOverSampler
+from imblearn.over_sampling import SMOTE
 
 
 df = pd.read_csv("titanic.csv", index_col=0)
@@ -46,6 +47,8 @@ X_train, X_dev, y_train, y_dev = train_test_split(X_train, y_train, test_size=17
 
 over = RandomOverSampler(random_state=36)
 X_ros, y_ros = over.fit_resample(X_train, y_train)
+smote = SMOTE(random_state=36)
+X_smote, y_smote = smote.fit_resample(X_train, y_train)
 
 
 X_train.shape, y_train.shape, X_test.shape, y_test.shape, X_dev.shape, y_dev.shape, X_ros.shape, y_ros.shape
@@ -74,7 +77,7 @@ plot_confusion_matrix(dt_sample, X_dev, y_dev, cmap='cool'); #maybe not
 
 f = plt.subplots(figsize=(12,6))
 #good tree
-plot_tree(dt, feature_names=df2.columns, class_names=['live','die']);
+plot_tree(dt, feature_names=df2.columns, class_names=['die','live']);
 
 
 pred = dt.predict(X_dev)
@@ -146,8 +149,14 @@ rf2.score(X_dev, y_dev) #better
 
 #best model yet after I dropped extra pclass. struggles more with survivors prol because it is the minority class
 #we might try balancing the classes
-#the tuned model doesn't overfit as badly as the original forest
 plot_confusion_matrix(rf2, X_dev, y_dev, cmap='bone_r');
+
+
+#using synthetic data
+rf_smote = RandomForestClassifier(**params, random_state=36)
+rf_smote.fit(X_smote, y_smote)
+print(rf_smote.score(X_dev, y_dev)) #accuracy
+plot_confusion_matrix(rf_smote, X_dev, y_dev, cmap='bone_r'); #not better
 
 
 #feature importance ranking
@@ -166,11 +175,26 @@ from sklearn.neighbors import KNeighborsClassifier
 
 
 #not the most promising
-knn = KNeighborsClassifier(n_neighbors=20)
+scores_out, scores_in = [], []
+k_values = range(1,50)
+for k in k_values:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train, y_train)
+    scores_out.append(round(knn.score(X_dev, y_dev),3))
+    scores_in.append(round(knn.score(X_train, y_train),3))    
+
+
+f = plt.subplots(figsize=(16,4))
+plt.plot(k_values, scores_in)
+plt.plot(k_values, scores_out)
+plt.grid()
+plt.legend(["train","dev"])
+plt.title("kNN accuracy on train & dev sets for different values k");
+
+
+#almost all errors on survived class, low recall
+knn = KNeighborsClassifier(n_neighbors=k_values[np.argmax(scores)])
 knn.fit(X_train, y_train)
-knn.score(X_dev, y_dev)
-
-
 plot_confusion_matrix(knn, X_dev, y_dev, cmap='copper_r');
 
 
