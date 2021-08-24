@@ -39,6 +39,10 @@ df2.head()
 df2=df2.drop(columns=['pclass'])
 
 
+#df2.to_csv("titanic_ml.csv")
+df2 = pd.read_csv("titanic_ml.csv")
+
+
 X_train, X_test, y_train, y_test = train_test_split(df2, labels, test_size=.17,
                                                     random_state=36, stratify=labels)
 X_train, X_dev, y_train, y_dev = train_test_split(X_train, y_train, test_size=17/83,
@@ -65,7 +69,7 @@ round(sum(base==y_train)/len(X_train),2) #accuracy
 dt = DecisionTreeClassifier(max_leaf_nodes=7, ccp_alpha=.007, random_state=36)
 dt.fit(X_train, y_train)
 print(dt.score(X_dev, y_dev)) #accuracy
-plot_confusion_matrix(dt, X_dev, y_dev, cmap='cool');      
+plot_confusion_matrix(dt, X_dev, y_dev, cmap='cool');
 
 
 #does 0versampling help?
@@ -122,7 +126,7 @@ plot_roc_curve(rf, X_dev, y_dev); #AUC = .88
 plot_confusion_matrix(rf, X_dev, y_dev, cmap='bone_r');
 
 
-#the default forest also overfits but maybe not as severely as the lone tree
+#the default forest also overfits but not as severely as the lone tree
 print(rf.score(X_train, y_train))
 plot_confusion_matrix(rf, X_train, y_train, cmap='bone_r');
 
@@ -145,6 +149,14 @@ params
 rf2 = RandomForestClassifier(**params, random_state=36) #unpack dictionary
 rf2.fit(X_train, y_train)
 rf2.score(X_dev, y_dev) #better
+
+
+rf3 = RandomForestClassifier(n_estimators = 100,
+                             min_samples_split = 4,
+                             min_samples_leaf = 4,
+                             max_depth = 4, random_state=36)
+rf3.fit(X_train, y_train)
+rf3.score(X_dev, y_dev)
 
 
 #best model yet after I dropped extra pclass. struggles more with survivors prol because it is the minority class
@@ -182,7 +194,7 @@ k_values = range(1,41)
 for k in k_values:
     #don't forget to scale!
     knn = make_pipeline(StandardScaler(),
-                        KNeighborsClassifier(n_neighbors=k))
+                        KNeighborsClassifier(n_neighbors=k, weights='uniform'))
     knn.fit(X_train, y_train)
     scores_out.append(round(knn.score(X_dev, y_dev),3))
     scores_in.append(round(knn.score(X_train, y_train),3))    
@@ -197,10 +209,11 @@ plt.legend(["train","dev"])
 plt.title("kNN accuracy on train & dev sets for different values k");
 
 
-#almost all errors on survived class, low recall
-knn = make_pipeline(StandardScaler(),
-                    KNeighborsClassifier(n_neighbors=k_values[np.argmax(scores_out)]))
+#more errors on positive/survived class
+k = k_values[np.argmax(scores_out)]
+knn = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=k))
 knn.fit(X_train, y_train)
+print(knn.score(X_dev, y_dev), k)
 plot_confusion_matrix(knn, X_dev, y_dev, cmap='copper_r');
 
 
@@ -280,7 +293,13 @@ lr2.fit(small_train, y_train)
 lr2.score(small_dev, y_dev)
 
 
+plot_confusion_matrix(lr2, small_dev, y_dev, cmap='copper_r');
+
+
 lr2.coef_, lr2.intercept_
+
+
+
 
 
 features=['sex_male', 'class_Third', 'sibsp',
