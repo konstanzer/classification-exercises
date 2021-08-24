@@ -3,6 +3,7 @@ env.py
 .ipynb_checkpoints
 __pycache__
 titanic.csv
+titanic_ml.csv
 iris.csv
 c3.csv
 paws.csv
