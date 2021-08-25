@@ -30,7 +30,6 @@ df=df.dropna(axis=0)
 
 
 df2=pd.get_dummies(df, drop_first=True)
-labels=df2.pop('survived')
 
 
 df2.head()
@@ -41,6 +40,7 @@ df2=df2.drop(columns=['pclass', 'passenger_id'])
 
 df2.to_csv("titanic_ml.csv")
 df2 = pd.read_csv("titanic_ml.csv", index_col=0)
+labels=df2.pop('survived')
 
 
 X_train, X_test, y_train, y_test = train_test_split(df2, labels, test_size=.17,
@@ -296,9 +296,7 @@ lr2.score(small_dev, y_dev)
 plot_confusion_matrix(lr2, small_dev, y_dev, cmap='copper_r');
 
 
-betas=lr2.coef_[0]
-bias=lr2.intercept_
-betas, bias
+lr2.coef_[0], lr2.intercept_
 
 
 features=['sex_male', 'class_Third', 'sibsp', 'age',
@@ -355,50 +353,66 @@ for odds in [.00001, .0001, .001, .01, .1, 1, 2, 20, 50, 100, 1000]:
     print(odds, np.log(odds))
 
 
-def sigmoid(x): return np.exp(x) / (1+np.exp(x))
+def sigmoid(x): return 1 / (1+np.exp(-x))
 scaler = StandardScaler()
 
-
-m = 500
-X = np.array(X_train[['sex_male', 'age', 'class_Third', 'sibsp']])
+m = 500 #number of samples
 y = np.array(y_train[:m])
-X = scaler.fit_transform(X[:m,:]) #without this step, your cost function will bounce all over
-theta = np.random.randint(-100,100,5)/100 #random initialization
-theta, b = theta[:-1], theta[-1]
-alpha = .1
-print(theta, b)
+
+alpha = .1 #learning rate
+epochs = 150
+
+X = np.array(X_train[['sex_male', 'class_Third', 'age']])
+X = scaler.fit_transform(X[:m,:]) #ensures rapid convergence
+X = np.c_[X, np.zeros((m,))] #extra column for bias term
+
 X[:2]
 
 
-epochs=150
+theta = np.zeros(4) #initialization
+
 for i in range(epochs):
+    
     #keep in mind, predicted labels aren't helpful for learning; probabilities produce interpretable losses
-    y_pred = sigmoid(X@theta + b)
+    y_pred = sigmoid(X@theta) #vectorized implmenetation
+    
     #logloss function
     J = -np.mean(y*np.log(y_pred) + (1-y)*np.log(1-y_pred))
-    #what's going on here? theta gets updated by the derivative of the cost function w.r.t. theta
-    #so what happened to J? it isn't needed to update theta but to check for convergence
-    theta -= (alpha/m) * X.T@(y_pred - y)
-    b -= (alpha/m) * np.sum(b*(y_pred - y))
-    if iget_ipython().run_line_magic("10", " == 0: print(J, theta, b)")
+    
+    #theta gets updated by the derivative of the cost function w.r.t. theta
+    #where's J? it isn't needed to update theta but to check for convergence , bias update???
+    theta -= alpha * X.T@(y_pred - y) / m
+    
+    if iget_ipython().run_line_magic("10", " == 0: print(f\"cost: {np.round(J,3)}, theta: {np.round(theta,3)}\")")
 
 
+theta = np.zeros(4) #initialization
+lambd = .1
 
+for i in range(epochs):
+    
+    y_pred = sigmoid(X@theta) #vectorized implmenetation
+    
+    #penalizing large betas reduces overfitting on small datasets
+    #l2 (ridge) is deafult: penalty is the square of the magnitude of the betas
+    J = -np.mean(y*np.log(y_pred) + (1-y)*np.log(1-y_pred)) + (1/(m*lambd)) * np.sum(np.square(theta))
+    
+    #theta gets updated by the derivative of the cost function w.r.t. theta, bias update???
+    theta -= alpha * X.T@(y_pred - y) / m
+    
+    if iget_ipython().run_line_magic("10", " == 0: print(f\"cost: {np.round(J,3)}, theta: {np.round(theta,3)}\")")
 
 
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import log_loss
+
 #but why not MSE? unlike linear regression, it won't give a convex function and you may converge on a local minima
 np.mean((y-y_pred)**2) #also the losses are tiny
+
 mean_squared_error(y, y_pred)
 
 
-#what is this penalty doing? penalizing large betas and therefore reducing overfitting on small datasets
-#how? adding the penalty to the loss function during fitting
-#l2 (ridge) is deafult: penalty is the square of the magnitude of the betas
-lambd = 1
-#prol not correct
-l2_penalty = (1/(m*lambd)) * np.sum(np.square(betas))
-l2_penalty
+log_loss(y, y_pred)
 
 
 
